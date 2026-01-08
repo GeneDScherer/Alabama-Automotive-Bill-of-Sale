@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alabama Bill of Sale - Saveable</title>
+    <title>Alabama Bill of Sale - Dropdown</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -67,14 +67,22 @@
 
         input[type="text"], 
         input[type="number"], 
-        input[type="date"] {
+        input[type="date"],
+        select {
             border: 1px solid #ccc;
             border-bottom: 1px solid #000;
             background-color: #fafafa;
             padding: 4px 6px; 
             font-size: 12px;
             border-radius: 2px;
-            height: 20px; 
+            height: 25px; 
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Specific fix for select alignment */
+        select {
+            padding-top: 2px;
         }
 
         .checkbox-group {
@@ -87,6 +95,8 @@
         
         input[type="checkbox"], input[type="radio"] {
             margin: 0 5px 0 0;
+            width: auto;
+            height: auto;
         }
 
         .legal-text {
@@ -127,10 +137,11 @@
             background-color: #eee;
             padding: 8px;
             font-size: 11px;
-            font-style: italic;
             border-left: 3px solid #333;
             margin-bottom: 10px;
             margin-top: 10px;
+            display: flex; 
+            align-items: center;
         }
 
         /* Button Styling */
@@ -201,10 +212,12 @@
             .btn-container, .save-notice {
                 display: none;
             }
-            input {
+            input, select {
                 background-color: transparent !important;
                 border: none !important;
                 border-bottom: 1px solid #000 !important;
+                appearance: none; /* Removes dropdown arrow on some browsers */
+                -webkit-appearance: none;
             }
             ::placeholder {
                 color: transparent;
@@ -273,7 +286,7 @@
             <hr>
 
             <div class="section legal-text">
-                <div style="margin-bottom: 5px;">
+                <div style="margin-bottom: 5px;style="flex: 3;">
                     <strong>I</strong> <input type="text" name="seller_name" class="inline-input" placeholder="Seller Name"> 
                     (Seller's Full Name) of:
                 </div>
@@ -330,14 +343,29 @@
                 <div class="checkbox-group" style="margin-top: 8px;">
                     <input type="checkbox" id="gift" name="is_gift">
                     <label for="gift" style="font-size: 11px; text-transform: none; cursor: pointer;">
-                        This was a gift. Indicate relationship (e.g. parent, spouse, friend):
+                        This was a gift. Indicate relationship:
                     </label>
                 </div>
-                <input type="text" name="relationship" placeholder="Relationship" style="width: 100%; margin-top: 2px;">
+                
+                <select name="relationship">
+                    <option value="" disabled selected>Select Relationship (Required for Tax Exemption)</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Child">Child</option>
+                    <option value="Step-Parent">Step-Parent</option>
+                    <option value="Step-Child">Step-Child</option>
+                    <option value="Grandparent">Grandparent</option>
+                    <option value="Grandchild">Grandchild</option>
+                    <option value="Sibling">Sibling (Brother/Sister)</option>
+                    <option value="Other">Other (May require tax payment)</option>
+                </select>
             </div>
 
             <div class="declaration">
-                I declare under penalty of perjury that the statements herein contained are true and correct to the best of my knowledge and belief.
+                <input type="checkbox" id="perjury_check" name="perjury_agreement" style="margin-right: 10px; cursor: pointer;">
+                <label for="perjury_check" style="font-style: italic; text-transform: none; font-weight: normal; cursor: pointer;">
+                    I declare under penalty of perjury that the statements herein contained are true and correct to the best of my knowledge and belief.
+                </label>
             </div>
 
             <div class="signatures">
@@ -346,7 +374,10 @@
                     <div style="height: 30px; background: #f0f0f0; border-bottom: 1px solid #000;"></div>
                     <br>
                     <label>Date</label>
-                    <input type="date" name="seller_sign_date" style="width: 100%;">
+                    <input type="text" name="seller_sign_date" style="width: 100%;" 
+                           placeholder="" 
+                           onfocus="(this.type='date')" 
+                           onblur="(if(!this.value)this.type='text')">
                 </div>
 
                 <div class="sig-block">
@@ -354,7 +385,10 @@
                     <div style="height: 30px; background: #f0f0f0; border-bottom: 1px solid #000;"></div>
                     <br>
                     <label>Date</label>
-                    <input type="date" name="buyer_sign_date" style="width: 100%;">
+                    <input type="text" name="buyer_sign_date" style="width: 100%;" 
+                           placeholder="" 
+                           onfocus="(this.type='date')" 
+                           onblur="(if(!this.value)this.type='text')">
                 </div>
             </div>
         </form>
@@ -380,13 +414,15 @@
                     if (input) {
                         if (input.type === 'checkbox' || input.type === 'radio') {
                             if (input.type === 'radio') {
-                                // For radios, we need to find the specific one with that value
                                 const radio = form.querySelector(`input[name="${key}"][value="${savedData[key]}"]`);
                                 if (radio) radio.checked = true;
                             } else {
                                 input.checked = savedData[key];
                             }
                         } else {
+                            if ((key.includes('date')) && savedData[key]) {
+                                input.type = 'date';
+                            }
                             input.value = savedData[key];
                         }
                     }
@@ -398,7 +434,6 @@
         form.addEventListener('input', (e) => {
             const formData = {};
             
-            // Loop through all form elements
             Array.from(form.elements).forEach(element => {
                 if (element.name) {
                     if (element.type === 'checkbox') {
@@ -415,7 +450,6 @@
 
             localStorage.setItem('alabamaBillOfSaleData', JSON.stringify(formData));
             
-            // Show "Saved" flash
             saveNotice.style.opacity = 1;
             setTimeout(() => { saveNotice.style.opacity = 0; }, 1500);
         });
@@ -425,6 +459,9 @@
             if(confirm("Are you sure you want to clear all fields?")) {
                 form.reset();
                 localStorage.removeItem('alabamaBillOfSaleData');
+                // Force date fields back to text to look blank
+                document.getElementsByName('seller_sign_date')[0].type = 'text';
+                document.getElementsByName('buyer_sign_date')[0].type = 'text';
             }
         }
     </script>
